@@ -14,7 +14,12 @@ with open(args.keyFile, 'r') as keyFile:
 		key[parts[0]] = parts[1]
 
 
-with open(args.cryptFile, 'wr') as cryptFile:
-	contents = cryptFile.read()
-	for k, v in key.items():
-		contents.replace(k,v)			
+with open(args.cryptFile, 'r') as cryptFile:
+	for word in cryptFile:
+		for ch in word:
+			if ch != '\n' and ch != ' ':
+				print(key[ch], end="")
+			else:
+				print(ch, end="")
+
+					
