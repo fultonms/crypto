@@ -1,18 +1,52 @@
 import modular
 
-def keyGen(k):
-   raise NotImplementedError("keyGen has not been implemented!")
+class Curve(object):
+   def __init__(self, a, b, q):
+      self.a = a
+      self.b = b
+      self.q = q
 
-def encrypt(m, q, A, B, G, P):
-   M = 0 #RANDOM
-   halfMask = ellipticMult(M, G, a, q)
-   fullMask = ellipticMult(M, P, a, q)
-   y = ellipticAdd(m, fullMask, a, q)
-   return (y, halfMask)
+   class Point(object):
+      def __init__(self, curve, x, y):
+         self.curve = curve
+         
+         if x is None and y is None:
+            self.x = None
+            self.y = None
+         else:
+            self.x = x % curve.q
+            self.y = x % curve.q
 
-def decrypt(y, halfMask, N, a, q):
-   fullMask = ellipticMult(N, halfMask, a, q)
-   return ellipticSub(y, fullMask, a, q)
+      def _getX(self):
+         return self.x
+
+      def _getY(self):
+         return self.y
+
+      def _setX(self, x):
+         if x is None:
+            self.x = None
+         else:
+            self.x = x % self.curve.q
+
+      def _setY(self, y):
+         if y is None:
+            self.y = None
+         else:
+            self.y  = y % self.curve.q
+
+      x = property(_getX, _setX)
+      y = property(_getY, _setY)
+
+      @property
+      def curve(self):
+         self.curve
+
+      def isInfinity(self):
+         return self.x is None and self.y is None
+
+   def __add__(self, 
+
 
 def isPointInfinity(P):
    x, y = P
