@@ -4,110 +4,111 @@ class Curve(object):
    def __init__(self, a, b, q):
       self.a = a
       self.b = b
-      self.q = q
+      self.q = q #Prime mod.
 
-   class Point(object):
+   class _Point(object):
       def __init__(self, curve, x, y):
-         self.curve = curve
+         self._curve = curve #Keep a reference to the curve the point is on.
          
          if x is None and y is None:
-            self.x = None
-            self.y = None
+            self._x = None
+            self._y = None
          else:
-            self.x = x % curve.q
-            self.y = x % curve.q
+            self._x = x % curve.q
+            self._y = y % curve.q
 
-      def _getX(self):
-         return self.x
+      def _get_x(self):
+         return self._x
 
-      def _getY(self):
-         return self.y
+      def _get_y(self):
+         return self._y
 
-      def _setX(self, x):
+      def _set_x(self, x):
          if x is None:
-            self.x = None
+            self._x = None
          else:
-            self.x = x % self.curve.q
+            self._x = x % self._curve.q
 
-      def _setY(self, y):
+      def _set_y(self, y):
          if y is None:
-            self.y = None
+            self._y = None
          else:
-            self.y  = y % self.curve.q
+            self._y  = y % self._curve.q
 
-      x = property(_getX, _setX)
-      y = property(_getY, _setY)
+      x = property(_get_x, _set_x)
+      y = property(_get_y, _set_y)
 
       @property
       def curve(self):
-         self.curve
+         return self._curve
+
+      def __getitem__(self, index):
+         return [self._x, self._y][index]
+      
+      def __setitem__(self, index, val):
+         setattr(self, ['x', 'y'][item], val)
 
       def isInfinity(self):
          return self.x is None and self.y is None
 
-   def __add__(self, 
+      def __add__(self, other):
+         assert isinstance(other, Curve._Point)
 
+         #Idenity returns with point at infinity.
+         if self.isInfinity():
+            return other
+         if other.isInfinity():
+            return self
 
-def isPointInfinity(P):
-   x, y = P
-   if x == None and y == None:
-      return True
-   else:
-      return False
+         # Case 1
+         if self.x != other.x:
+            m = ((other.y - self.y) * modular.modInv(other.x - self.x, self.curve.q)) % self.curve.q
+            x = (m * m - (self.x + other.x)) % self.curve.q
+            y = (other.y + m * (x - other.x)) % self.curve.q
+            return self.curve.Point(x, self.curve.q - y)
+         else:
+            # Case 2
+            if self.y == -other.y:
+               return self.curve.POINT_AT_INFINITY
+            # Case 3 (equality)
+            elif self.y == other.y:
+               m = ((3 * self.x * self.x + self.curve.a) * modular.modInv(2 * self.y, self.curve.q)) % self.curve.q
+               x = (m * m - 2 * self.x) % self.curve.q
+               y = (self.y + m * (x - self.x)) % self.curve.q
+               return self.curve.Point(x, self.curve.q - y)
 
-def ellipticAdd(P, Q, a, q):
-   Z = None
+      def __mul__(self, other):
+         assert isinstance(other, (int, long))
 
-   if isPointInfinity(P):
-      Z = Q
-   elif isPointInfinity(Q):
-      Z = P
-   else:
-      x1, y1 = P
-      x2, y2 = Q
+         if other == 0:
+            return self.curve.POINT_AT_INFINITY
+         elif (other % 2) == 0:  # Even
+            halfp = self * (other / 2)
+            return halfp + halfp
+         else:  # Odd
+            return self + (self * (other - 1))
 
-      if not modEq(x1, x2, q):
-         m = mod((y2-y1) * modInv((x2-x1), q), q)
-         c = mod(y1- (m * x1),q)
+      def inv(self):
+         return self.curve.Point(self.x, self.curve.q - self.y)
 
-         x3 = mod(pow(m, 2) - (x1+x2), q)
-         y3 = mod((m* x3) + c, q)
-         Z = (x3, mod(q-y3, q))
-      elif modEq(x1, x2, q) and modEq(y1, -y2, q):
-         Z = (None, None)
-      elif modeq(x1, x2, q) and modEq(y1, y2, q):
-         m = mod(((3 * pow(x1,2)+ a) * modInv(2*y1, q)), q)
-         x3 = mod((pow(m,2) - 2*x1, q))
-         y3 = mod((y1 + m*(x3-x1)), q)
-         Z = (x3, mod(q-y3, q))
-         
-      else:
-         raise ValueError("The points shoudl fit into one of these three cases")
+      def __sub__(self, other):
+         assert isinstance(other, Curve._Point)
+         return self + other.inv()
 
-   return Z
-   
-def ellipticSub(P, Q, a, q):
-   x, y = Q
-   return ellipticAdd(P, (x, mod(-y, q)), a, q)
+      def __repr__(self):
+            return '%r.Point(%r, %r)'%(self.curve, self.x, self.y)
 
-def ellipticMult(n, P, a, q):
-   if n == 0:
-      return (None, None)
-   else:
-      if n % 2 == 0:
-         return ellipticMult(2, ellipticMult(n/2, P, a, q), a, q)
-      else:
-         return ellipticAdd(P, ellipticMult(n-1, P, a, q), a,  q)
+   @property
+   def POINT_AT_INFINITY(self):
+      return self.Point(None, None)
 
-def isPointInfinity(P):
-   x, y = P
-   if x == None and y == None:
-      return True
-   else:
-      return False
+   def Point(self, x, y):
+      return Curve._Point(self, x, y)
+
+   def __repr__(self):
+        return 'Curve(%r, %r, %r)'%(self.a, self.b, self.q)
 
 if __name__== '__main__':
-   #print "This module must be imported, not run as main."
-   print decrypt((12, 2), (32, 32), 4, 4, 43)
+   print "This module must be imported, not run as main."
 else:
    pass

@@ -4,9 +4,10 @@ def mod(x, m):
       a += m
    return a
    
-def modInv(x, m):
-   g, x, y = xcdg(a, m)
-   if q != 1:
+def modInv(a, m):
+   if a < 0: a += m
+   g, x, y = xgcd(a, m)
+   if g != 1:
       raise Exception('modular inverse doesnt exist')
    else:
       return mod(x, m)
