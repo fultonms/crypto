@@ -40,7 +40,7 @@ class ECEG(object):
          
 
    def __repr__(self):
-        return 'Cipher(%r, %r, %r, %r)'%(self.curve, self.gen, self.pub, self.n)
+        return 'EllipticElGamal(%r, %r, %r, %r)'%(self.curve, self.gen, self.pub, self.n)
 
 if __name__ == '__main__':
    #print "Import this module, do not run it."
