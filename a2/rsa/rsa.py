@@ -71,7 +71,8 @@ if __name__=='__main__':
    if keyFile != None:
       rsa = RSA.load(open(keyFile))
    else:
-      rsa = RSA(64)
+      k = int(raw_input("Specify security parameter:"))
+      rsa = RSA(k)
       rsa.keygen()
       rsa.save(open('keys.dat', 'w'))
 
